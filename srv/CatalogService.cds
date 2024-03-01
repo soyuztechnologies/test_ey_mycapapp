@@ -1,13 +1,18 @@
 using { anubhav.db.master, anubhav.db.transaction } from '../db/datamodel';
 
-service CatalogService @(path: 'CatalogService') {
+service CatalogService @(path: 'CatalogService', requires: 'authenticated-user') {
 
     @readonly
     entity EmployeeSet as projection on master.employees;
+
     entity BusinessPartnerSet as projection on master.businesspartner;
     @Capabilities: { Updatable,Deletable : false }
     entity ProductSet as projection on master.product;
-    entity AddressSet as projection on master.address;
+    entity AddressSet @(restrict: [ 
+                        { grant: ['READ'], to: 'Viewer', where: 'COUNTRY = $user.myCountry' },
+                        { grant: ['WRITE'], to: 'Admin' }
+                        ])
+                        as projection on master.address;
     entity POs @(
         odata.draft.enabled: true,
         Common.DefaultValuesFunction : 'getOrderDefaults'
